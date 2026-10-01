@@ -9,14 +9,14 @@ they must be set up by a cluster admin.
 | Operator | Min Version | OperatorHub Package | Catalog | Purpose |
 | ---------- | ------------- | --------------------- | --------- | --------- |
 | OpenShift Container Platform | 4.19.9 | — | — | Gateway API CRDs (native in 4.19+) |
-| Red Hat OpenShift AI | 3.4 | `rhods-operator` | `redhat-operators` | KServe, MaaS controller, Dashboard |
+| Red Hat OpenShift AI | 3.5 | `rhods-operator` | `redhat-operators` | KServe, MaaS controller, Dashboard |
 | Red Hat Connectivity Link | 1.3 | `rhcl-operator` | `redhat-operators` | Kuadrant, Authorino, Limitador |
 | cert-manager | 1.x | `openshift-cert-manager-operator` | `redhat-operators` | TLS certificates |
 | Custom Metrics Autoscaler | 2.19 | `custom-metrics-autoscaler` | `redhat-operators` | KEDA for GPU model scale-to-zero (optional) |
 
 > **Note:** Do not install the community `kuadrant-operator` from
 > `community-operators`. It is deprecated and its CRDs are incompatible
-> with RHOAI 3.4's MaaS controller. Use `rhcl-operator` from
+> with RHOAI's MaaS controller. Use `rhcl-operator` from
 > `redhat-operators` instead.
 
 ## Required Cluster Configuration
@@ -48,7 +48,7 @@ metadata:
   name: rhods-operator
   namespace: redhat-ods-operator
 spec:
-  channel: stable-3.4
+  channel: stable-3.5
   name: rhods-operator
   source: redhat-operators
   sourceNamespace: openshift-marketplace

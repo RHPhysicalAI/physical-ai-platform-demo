@@ -7,7 +7,16 @@ spec:
     kserve:
       managementState: Managed
       rawDeploymentServiceConfig: Headed
-      modelsAsService:
+    # MaaS moved out of kserve in RHOAI 3.5. kserve.modelsAsService is deprecated
+    # and cannot be re-enabled once Removed, so setting it is rejected outright:
+    #   spec.components.kserve.modelsAsService: Invalid value: modelsAsService is
+    #   deprecated; cannot re-enable once Removed. Use
+    #   spec.components.aigateway.modelsAsAService instead
+    # The "AsA" spelling is intentional -- it matches the ai-gateway-operator CRD
+    # field, and the CRD description calls the JSON tag the authoritative surface.
+    aigateway:
+      managementState: Managed
+      modelsAsAService:
         managementState: Managed
     modelregistry:
       managementState: Managed
