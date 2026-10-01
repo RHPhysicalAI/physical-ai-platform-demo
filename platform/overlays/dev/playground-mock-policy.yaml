@@ -1,0 +1,86 @@
+# Use the mock policy backend in dev.
+#
+# The upstream default is policy.type "openpi" (note the "#\"mock\"" left
+# commented beside it), pointing at ws://dreamzero-predictor/ and
+# ws://pi05-predictor/. Neither Service exists in this overlay -- dev
+# deliberately carries no GPU models -- so the API blocks forever in its
+# FastAPI startup handler:
+#
+#   INFO:     Started server process [1]
+#   INFO:     Waiting for application startup.
+#
+# and never reaches "Application startup complete". The readiness probe on
+# /api/health then never passes, the Deployment trips its progress deadline,
+# and the whole Application reports Degraded.
+#
+# bridge.type is already "mock" upstream; this just makes policy match, which
+# is what dev wants anyway. The whole config.yaml has to be restated because
+# a strategic merge replaces the data key wholesale, and the ConfigMap comes
+# from a remote kustomize resource so it cannot be patched in base. dev-gpu
+# and demo override the same ConfigMap the same way.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robotics-playground-config
+  namespace: physical-ai
+data:
+  config.yaml: |
+    server:
+      host: "0.0.0.0"
+      port: 8000
+      log_level: "info"
+
+    rerun:
+      grpc_port: 9876
+      recording_dir: "/data/rerun"
+
+    bridge:
+      type: "mock"
+
+    policy:
+      type: "mock"
+      default_model: "dreamzero-v1"
+      models:
+        dreamzero-v1:
+          name: "DreamZero"
+          endpoint: "ws://dreamzero-predictor/v1/realtime/robot/openpi"
+          action_horizon: 4
+        pi05-v1:
+          name: "pi0.5"
+          endpoint: "ws://pi05-predictor/"
+          action_horizon: 8
+          action_type: "velocity"
+          camera_mapping:
+            wrist: "observation/wrist_image_left"
+            exterior_1: "observation/exterior_image_1_left"
+      embodiment:
+        joint_names:
+          - panda_joint1
+          - panda_joint2
+          - panda_joint3
+          - panda_joint4
+          - panda_joint5
+          - panda_joint6
+          - panda_joint7
+        training_order:
+          - panda_joint1
+          - panda_joint2
+          - panda_joint3
+          - panda_joint4
+          - panda_joint5
+          - panda_joint6
+          - panda_joint7
+        joint_limits:
+          panda_joint1: [-2.8973, 2.8973]
+          panda_joint2: [-1.7628, 1.7628]
+          panda_joint3: [-2.8973, 2.8973]
+          panda_joint4: [-3.0718, -0.0698]
+          panda_joint5: [-2.8973, 2.8973]
+          panda_joint6: [-0.0175, 3.7525]
+          panda_joint7: [-2.8973, 2.8973]
+        gripper_joint: "panda_finger_joint1"
+        gripper_limits: [0.0, 0.04]
+        camera_mapping:
+          wrist: "observation/wrist_image_left"
+          exterior_1: "observation/exterior_image_1_left"
+          exterior_2: "observation/exterior_image_2_left"
