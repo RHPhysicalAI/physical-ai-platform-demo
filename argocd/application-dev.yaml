@@ -44,10 +44,17 @@ spec:
       kind: DataScienceCluster
       jsonPointers:
         - /status
+    # KServe controller mutates annotations on InferenceServices: it rewrites
+    # deploymentMode (RawDeployment -> Standard in RHOAI 3.5) and adds
+    # modelFormat. Without these the InferenceServices sit permanently
+    # OutOfSync while reporting Healthy. Mirrors application-dev-gpu.yaml.
     - group: serving.kserve.io
       kind: InferenceService
       jsonPointers:
         - /status
+        - /metadata/annotations/serving.kserve.io~1deploymentMode
+        - /metadata/annotations/modelFormat
+        - /metadata/annotations/kubectl.kubernetes.io~1last-applied-configuration
     - group: apps
       kind: StatefulSet
       name: maas-db
