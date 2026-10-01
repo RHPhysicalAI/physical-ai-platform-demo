@@ -3,3 +3,8 @@ kind: Kustomization
 
 resources:
   - ../../base
+
+components:
+  # RHOAI 3.5.1 does not register the maas.opendatahub.io CRDs; see the
+  # component for the full diagnosis. Drop this line once it does.
+  - ../../components/no-maas-crs
