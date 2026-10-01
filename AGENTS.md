@@ -55,7 +55,7 @@ See [docs/adding-models.md](docs/adding-models.md) for the two patterns (KServe 
 
 See `platform/prerequisites.md` for operator and cluster requirements:
 
-- Red Hat OpenShift AI 3.4+
+- Red Hat OpenShift AI 3.5+ (3.4 is too old: MaaS moved to `aigateway.modelsAsAService`)
 - Red Hat Connectivity Link 1.3+ (`rhcl-operator`, NOT the community `kuadrant-operator`)
 - cert-manager Operator 1.x
 - OpenShift 4.19.9+ (for native Gateway API CRDs)

@@ -94,7 +94,7 @@ check_operator() {
     fi
 }
 
-check_operator "Red Hat OpenShift AI" "redhat-ods-operator" "rhods-operator" "3.4"
+check_operator "Red Hat OpenShift AI" "redhat-ods-operator" "rhods-operator" "3.5"
 check_operator "Red Hat Connectivity Link" "kuadrant-system" "rhcl-operator" "1.3"
 check_operator "cert-manager Operator" "cert-manager-operator" "openshift-cert-manager-operator" "1.0"
 echo ""
