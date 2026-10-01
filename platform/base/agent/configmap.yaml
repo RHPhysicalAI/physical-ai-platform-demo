@@ -14,7 +14,7 @@ data:
   AGENT_LLM_MODEL: "qwen25-gpu"
   AGENT_LLM_API_KEY: "unused"
   AGENT_MAAS_PROXY_URL: "https://maas-proxy.physical-ai-models.svc.cluster.local"
-  PLATFORM_REPO_URL: "https://github.com/redhat-et/physical-ai-platform-demo.git"
+  PLATFORM_REPO_URL: "https://github.com/RHPhysicalAI/physical-ai-platform-demo.git"
   PLATFORM_REPO_BRANCH: "main"
   TARGET_OVERLAY: "dev-gpu"
   ARGOCD_APP_NAME: "physical-ai-platform-dev-gpu"
