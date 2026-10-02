@@ -8,6 +8,8 @@ components:
   # RHOAI 3.5.1 does not register the maas.opendatahub.io CRDs; see the
   # component for the full diagnosis. Drop this line once it does.
   - ../../components/no-maas-crs
+  # Upstream hardcodes its own cluster's domain in the playground URLs.
+  - ../../components/cluster-urls
 
 patches:
   # dev carries no GPU models, so the playground's openpi policy has nothing

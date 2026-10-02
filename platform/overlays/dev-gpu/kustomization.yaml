@@ -13,6 +13,12 @@ resources:
   - ../../base/simulator/
   - ../../base/agent/
 
+components:
+  # Upstream hardcodes its own cluster's domain in the playground and agent
+  # URLs. This overlay is the only one that pulls in base/agent/, so it is
+  # also the only one where the DASHBOARD_URL patch matches anything.
+  - ../../components/cluster-urls
+
 patches:
   - path: playground-ros2-config.yaml
   - path: simulator-fork-env.yaml
