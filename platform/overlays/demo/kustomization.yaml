@@ -9,5 +9,9 @@ resources:
   - ../../base/models/pi05/
   - ../../base/models/pi05_checkpoint/
 
+components:
+  # Upstream hardcodes its own cluster's domain in the playground URLs.
+  - ../../components/cluster-urls
+
 patches:
   - path: playground-ros2-config.yaml

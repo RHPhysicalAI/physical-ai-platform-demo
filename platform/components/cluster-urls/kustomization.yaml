@@ -1,0 +1,64 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Point the externally-facing URLs at THIS cluster.
+#
+# Upstream hardcodes apps.emerg.pcbk.p1.openshiftapps.com, which is its own
+# cluster. This fork runs on apps.c9q3b0q0y2m7x4a.ylf4.p1.openshiftapps.com.
+#
+# This is not a dead-host failure, which makes it easy to misdiagnose: the
+# upstream hostnames resolve, so the browser silently opens a websocket
+# against a cluster it has no session on and hangs, rather than erroring.
+# The playground backend is healthy throughout -- /api/health returns
+# {"status":"ok"} while /api/config hands the browser upstream's URLs.
+#
+# Kept as a component patching by target selector rather than an edit to
+# platform/base/, so that upstream rebases do not conflict here and so the
+# agent ConfigMap (which only the dev-gpu overlay pulls in) can be covered by
+# the same component without breaking overlays that omit it.
+#
+# When the cluster moves, this file is the only place to change.
+
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: robotics-playground
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: robotics-playground
+      spec:
+        template:
+          spec:
+            containers:
+              - name: api
+                env:
+                  - name: WS_EXTERNAL_URL
+                    # yamllint disable-next-line rule:line-length
+                    value: "wss://robotics-playground-api-physical-ai.apps.c9q3b0q0y2m7x4a.ylf4.p1.openshiftapps.com"
+                  - name: RERUN_VIEWER_URL
+                    # yamllint disable-next-line rule:line-length
+                    value: "https://robotics-playground-rerun-web-redhat-ods-applications.apps.c9q3b0q0y2m7x4a.ylf4.p1.openshiftapps.com/rerun"
+                  - name: RERUN_GRPC_URL
+                    # yamllint disable-next-line rule:line-length
+                    value: "https://robotics-playground-rerun-grpc-physical-ai.apps.c9q3b0q0y2m7x4a.ylf4.p1.openshiftapps.com"
+
+  # Only present in overlays that include base/agent/ (dev-gpu). A target
+  # selector that matches nothing is a no-op, so dev and demo are unaffected.
+  - target:
+      version: v1
+      kind: ConfigMap
+      name: platform-agent-config
+    patch: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: platform-agent-config
+      data:
+        # rh-ai.apps.<domain> is the canonical dashboard entry point here too
+        # -- both data-science-gateway and rhods-dashboard 301 to it -- so
+        # only the domain differs from upstream.
+        DASHBOARD_URL: "https://rh-ai.apps.c9q3b0q0y2m7x4a.ylf4.p1.openshiftapps.com"
