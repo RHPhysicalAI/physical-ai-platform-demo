@@ -18,6 +18,8 @@ components:
   # URLs. This overlay is the only one that pulls in base/agent/, so it is
   # also the only one where the DASHBOARD_URL patch matches anything.
   - ../../components/cluster-urls
+  # Fix download jobs to work with OpenShift restricted SCC (set HOME=/tmp)
+  - ../../components/fix-download-jobs
 
 patches:
   - path: playground-ros2-config.yaml
