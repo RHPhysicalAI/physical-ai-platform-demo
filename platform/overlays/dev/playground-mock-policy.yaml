@@ -54,6 +54,9 @@ data:
             wrist: "observation/wrist_image_left"
             exterior_1: "observation/exterior_image_1_left"
       embodiment:
+        # Mock simulator only publishes 6 joint positions (not 7).
+        # The 7th joint (panda_joint7) causes IndexError in the embodiment
+        # adapter when it tries to reorder positions[6] on a size-6 array.
         joint_names:
           - panda_joint1
           - panda_joint2
@@ -61,7 +64,6 @@ data:
           - panda_joint4
           - panda_joint5
           - panda_joint6
-          - panda_joint7
         training_order:
           - panda_joint1
           - panda_joint2
@@ -69,7 +71,6 @@ data:
           - panda_joint4
           - panda_joint5
           - panda_joint6
-          - panda_joint7
         joint_limits:
           panda_joint1: [-2.8973, 2.8973]
           panda_joint2: [-1.7628, 1.7628]
