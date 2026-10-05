@@ -24,4 +24,5 @@ components:
 patches:
   - path: playground-ros2-config.yaml
   - path: simulator-fork-env.yaml
+  - path: simulator-fixes.yaml
   - path: cyclonedds-rmw.yaml

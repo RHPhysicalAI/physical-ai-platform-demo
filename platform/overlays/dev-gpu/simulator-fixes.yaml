@@ -1,0 +1,32 @@
+# Fix simulator to run on g6e.xlarge nodes (3.5 CPU available)
+# and add environment variables for headless Isaac Sim operation
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simulator
+  namespace: physical-ai
+spec:
+  template:
+    spec:
+      containers:
+      - name: isaac-lab
+        # Reduce CPU request from 4 to 3 to fit on g6e.xlarge
+        resources:
+          requests:
+            cpu: "3"
+            memory: 16Gi
+          limits:
+            memory: 32Gi
+            nvidia.com/gpu: "1"
+        # Add environment variables for headless Isaac Sim
+        env:
+        - name: ACCEPT_EULA
+          value: "Y"
+        - name: OMNI_KIT_ACCEPT_EULA
+          value: "YES"
+        # Disable Omniverse telemetry
+        - name: OMNI_KIT_ALLOW_ROOT
+          value: "1"
+        # Force headless rendering with EGL
+        - name: OMNI_SERVER
+          value: "1"
