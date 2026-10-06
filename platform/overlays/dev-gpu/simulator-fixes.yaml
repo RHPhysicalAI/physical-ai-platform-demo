@@ -1,5 +1,31 @@
-# Fix simulator to run on g6e.xlarge nodes (3.5 CPU available)
-# and add environment variables for headless Isaac Sim operation
+# Make the Isaac Lab simulator run under OpenShift's restricted SCC on a
+# g6e.xlarge (1x L40S) node.
+#
+# Two distinct problems are fixed here.
+#
+# 1. Scheduling: the upstream deployment requests 4 CPU, but a g6e.xlarge only
+#    has 3500m allocatable, so the pod never schedules. Request 3.
+#
+# 2. RTX cannot start because its cache directories are not writable.
+#    The image bakes these paths as root-owned, but OpenShift runs the
+#    container as UID 1234, so Kit fails with:
+#
+#      Unable to create ShaderDb cache directory /isaac-sim/kit/cache/shadercache/common
+#      Failed to initialize rtx::shaderdb::ContextManager
+#      Permission denied: '/isaac-sim/kit/cache/ogn_generated'
+#      failed to open file '/isaac-sim/kit/data/.../user.config.json'
+#      -> HydraEngine rtx failed creating scene renderer.
+#
+#    The renderer is not optional: run_playground.py forces
+#    `args_cli.enable_cameras = True` so the VLA bridge can publish camera
+#    observations on /vla/obs/, so RTX must initialise for the sim to run.
+#
+#    Every directory Kit writes to is therefore backed by an emptyDir. fsGroup
+#    makes those volumes group-writable for the arbitrary UID.
+#
+# Config values (runtimeClassName, NVIDIA_*, WARP_CACHE_PATH, MPLCONFIGDIR)
+# follow RHPhysicalAI/industrial-ai-showcase, which runs Isaac Sim headless
+# on this same cluster.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,25 +34,71 @@ metadata:
 spec:
   template:
     spec:
+      # Use the NVIDIA container runtime so the driver is injected.
+      runtimeClassName: nvidia
+      securityContext:
+        fsGroup: 1234
       containers:
-      - name: isaac-lab
-        # Reduce CPU request from 4 to 3 to fit on g6e.xlarge
-        resources:
-          requests:
-            cpu: "3"
-            memory: 16Gi
-          limits:
-            memory: 32Gi
-            nvidia.com/gpu: "1"
-        # Add environment variables for headless Isaac Sim
-        env:
-        - name: ACCEPT_EULA
-          value: "Y"
-        - name: OMNI_KIT_ACCEPT_EULA
-          value: "YES"
-        # Disable Omniverse telemetry
-        - name: OMNI_KIT_ALLOW_ROOT
-          value: "1"
-        # Force headless rendering with EGL
-        - name: OMNI_SERVER
-          value: "1"
+        - name: isaac-lab
+          resources:
+            requests:
+              # g6e.xlarge has 3500m allocatable; upstream's 4 never schedules.
+              cpu: "3"
+              memory: 16Gi
+            limits:
+              memory: 32Gi
+              nvidia.com/gpu: "1"
+          env:
+            - name: ACCEPT_EULA
+              value: "Y"
+            - name: PRIVACY_CONSENT
+              value: "Y"
+            - name: OMNI_KIT_ACCEPT_EULA
+              value: "Y"
+            - name: OMNI_KIT_ALLOW_ROOT
+              value: "1"
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "all"
+            - name: WARP_CACHE_PATH
+              value: /tmp/warp_cache
+            - name: MPLCONFIGDIR
+              value: /tmp/matplotlib
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            # Kit shader cache + generated OmniGraph nodes. Without this RTX
+            # cannot create its scene renderer.
+            - name: kit-cache
+              mountPath: /isaac-sim/kit/cache
+            # Kit writes user.config.json here on startup.
+            - name: kit-data
+              mountPath: /isaac-sim/kit/data
+            - name: kit-logs
+              mountPath: /isaac-sim/kit/logs
+            - name: cache
+              mountPath: /isaac-sim/.cache
+              subPath: dot-cache
+            - name: cache
+              mountPath: /isaac-sim/.nv
+              subPath: dot-nv
+            - name: cache
+              mountPath: /isaac-sim/.local
+              subPath: dot-local
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 20Gi
+        - name: kit-cache
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: kit-data
+          emptyDir:
+            sizeLimit: 2Gi
+        - name: kit-logs
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: cache
+          emptyDir:
+            sizeLimit: 10Gi

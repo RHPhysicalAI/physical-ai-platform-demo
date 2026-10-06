@@ -1,0 +1,80 @@
+# Adapt the simulator entrypoint and its environment code to Isaac Lab 3.0.
+#
+# Upstream's entrypoint targets Isaac Lab 2.3.2. Three things moved in 3.0:
+#
+# 1. The ROS2 bridge extension was renamed:
+#      isaacsim.ros2.bridge -> isaacsim.ros2.core
+#    rclpy and its shared libraries live under the new name. The old path
+#    does not exist, and the entrypoint runs under `set -euo pipefail`, so
+#    the "import rclpy" preflight check turns a wrong path into a hard exit.
+#
+# 2. AppLauncher no longer accepts --headless or --enable_cameras. Headless
+#    is the default now, and run_playground.py sets enable_cameras in code
+#    (args_cli.enable_cameras = True). Passing either flag makes argparse
+#    fail with "unrecognized arguments".
+#
+# 3. Isaac Sim's bundled Python is 3.12, the same as ROS2 Jazzy -- it was
+#    3.11 in 2.3.2. The version mismatch is what the /opt/ros/jazzy
+#    PYTHONPATH-stripping dance worked around. The 3.0 image ships no
+#    /opt/ros at all, so the whole workaround is dropped.
+#
+# The environment code itself needed a matching port; that lives in the
+# fork pointed at by simulator-fork-env.yaml, not here.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simulator
+  namespace: physical-ai
+spec:
+  template:
+    spec:
+      containers:
+        - name: isaac-lab
+          args:
+            - |
+              set -euo pipefail
+
+              echo "=== Simulator runtime ==="
+              echo "PWD=$(pwd)"
+              echo "HOME=${HOME}"
+
+              echo
+              echo "=== Environment source ==="
+              ls -la /git/repo
+
+              echo
+              echo "=== Isaac Lab version ==="
+              cat /workspace/isaaclab/VERSION
+
+              echo
+              echo "=== Isaac Sim Python ==="
+              test -x /workspace/isaaclab/_isaac_sim/python.sh
+              /workspace/isaaclab/_isaac_sim/python.sh --version
+
+              export ISAAC_SIM_PATH=/isaac-sim
+              export ROS_DISTRO=jazzy
+              export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-0}"
+              export RMW_IMPLEMENTATION="${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"
+
+              # Renamed from isaacsim.ros2.bridge in Isaac Lab 2.x.
+              ROS2_EXT="${ISAAC_SIM_PATH}/exts/isaacsim.ros2.core/jazzy"
+              export PYTHONPATH="/git/repo:${ROS2_EXT}/rclpy${PYTHONPATH:+:${PYTHONPATH}}"
+              export LD_LIBRARY_PATH="${ROS2_EXT}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+
+              echo
+              echo "=== ROS 2 configuration ==="
+              echo "ROS_DISTRO=${ROS_DISTRO}"
+              echo "ROS_DOMAIN_ID=${ROS_DOMAIN_ID}"
+              echo "RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION}"
+              echo "PYTHONPATH=${PYTHONPATH}"
+              echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+
+              echo
+              echo "=== Checking rclpy ==="
+              /workspace/isaaclab/_isaac_sim/python.sh -c \
+                "import rclpy; print('rclpy import OK:', rclpy.__file__)"
+
+              echo
+              echo "=== Starting simulator ==="
+              # No --headless / --enable_cameras: removed from AppLauncher in 3.0.
+              exec ./isaaclab.sh -p -m "${SIMULATOR_MODULE}"

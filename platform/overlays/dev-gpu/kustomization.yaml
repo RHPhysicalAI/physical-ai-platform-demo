@@ -25,4 +25,6 @@ patches:
   - path: playground-ros2-config.yaml
   - path: simulator-fork-env.yaml
   - path: simulator-fixes.yaml
+  - path: simulator-isaac-lab-3.yaml
+  - path: simulator-entrypoint-isaac-lab-3.yaml
   - path: cyclonedds-rmw.yaml
