@@ -1,5 +1,14 @@
-# TEMPORARY: use fzdarsky fork until
-# https://github.com/redhat-et/ros2_manager_based_env/pull/1 is merged
+# TEMPORARY: the environment is git-synced at runtime rather than baked
+# into the image, so this is where we select which copy of it to run.
+#
+# Points at a fork of fzdarsky's branch carrying the Isaac Lab 3.0 port
+# (see simulator-isaac-lab-3.yaml for why 3.0 is required). The port is
+# three commits -- isaaclab_tasks package moves, removal of PhysX solver
+# settings that the Newton backend dropped, and the .torch accessor now
+# needed to get tensors out of robot.data.
+#
+# Fold back to an upstream ref once the port is merged there:
+#   https://github.com/redhatHameed/ros2_manager_based_env/tree/feat/isaac-lab-3.0
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -11,9 +20,9 @@ spec:
         - name: clone-env
           env:
             - name: ENV_GIT_REPO
-              value: https://github.com/fzdarsky/ros2_manager_based_env.git
+              value: https://github.com/redhatHameed/ros2_manager_based_env.git
             - name: ENV_GIT_REF
-              value: feat/simulation-interfaces-services
+              value: feat/isaac-lab-3.0
       containers:
         - name: isaac-lab
           env:

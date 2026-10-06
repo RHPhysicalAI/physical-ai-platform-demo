@@ -1,0 +1,32 @@
+# Upgrade the simulator to Isaac Lab 3.0 (Isaac Sim 6.x).
+#
+# Isaac Lab 2.3.2 ships Isaac Sim 5.1, whose RTX renderer segfaults during
+# Hydra engine creation when running headless in this container:
+#
+#   omni::usd::UsdContext::newStage()
+#     -> omni::usd::UsdManager::createHydraEngine
+#       -> libomni.hydra.rtx.plugin.so
+#        -> libcarb.scenerenderer-rtx.plugin.so
+#          -> librtx.scenedb.plugin.so   <-- SIGSEGV
+#
+# The renderer cannot simply be disabled: run_playground.py forces
+# `args_cli.enable_cameras = True` because the VLA bridge publishes camera
+# observations on /vla/obs/, so RTX has to initialise.
+#
+# Isaac Sim 6.x is known to initialise RTX correctly in a headless container
+# on this cluster -- it is what RHPhysicalAI/industrial-ai-showcase runs.
+# Isaac Lab 3.0 is the first Isaac Lab release built on Isaac Sim 6.x.
+#
+# Note the tag: NGC publishes 3.0.0-rc1 (and -kitless), but no plain "3.0.0"
+# or "latest" tag -- pulling either of those fails with "manifest unknown".
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simulator
+  namespace: physical-ai
+spec:
+  template:
+    spec:
+      containers:
+        - name: isaac-lab
+          image: nvcr.io/nvidia/isaac-lab:3.0.0-rc1
